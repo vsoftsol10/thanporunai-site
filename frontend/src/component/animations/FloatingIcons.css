@@ -1,0 +1,48 @@
+.floating-icon {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+/* WhatsApp Button - bottom left */
+.whatsapp-float { 
+  left: 20px;
+  bottom: 90px;
+  background-color: #25d366;
+}
+
+/* Back to Top Button - bottom right */
+.back-to-top {
+  right: 20px;
+  bottom: 90px;
+  background-color: #803082;
+  border: none;
+}
+
+/* Hover effect */
+.floating-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  .whatsapp-float {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .back-to-top {
+    bottom: 16px;
+    right: 16px;
+  }
+}
