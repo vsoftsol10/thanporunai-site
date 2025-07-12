@@ -1,19 +1,47 @@
-import React from 'react';
-import './App.css'
-import Header from './component/Header';
-import Footer from './component/Footer';
-import FloatingIcons from './component/animations/FloatingIcons';
-function App() {
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import './App.css';
 
-  
+import Header from './component/pages/Header';
+import Footer from './component/pages/Footer';
+import Home from './component/pages/Home';
+import WhoWeAre from "./component/pages/WhoWeAre";
+import WhatWeDo from "./component/pages/WhatWeDo";
+import Contact from "./component/pages/Contact";
+import FloatingIcons from './component/animations/FloatingIcons';
+import AdminLogin from './component/pages/AdminLogin';
+import AdminPage from './component/pages/AdminPage';
+
+function AppContent() {
+  const location = useLocation();
+
+  // Routes where Header and Footer should be hidden
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <>
-    <FloatingIcons />
-      <Header />
-      <h2 className='text-blue-500'>Hi</h2>
-      <Footer />
+      {!isAdminRoute && <Header />}
+      <FloatingIcons />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<WhoWeAre />} />
+        <Route path="/services" element={<WhatWeDo />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/adminlogin" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminPage />} />
+      </Routes>
+
+      {!isAdminRoute && <Footer />}
     </>
-  )
+  );
 }
 
-export default App
+function App() {
+  return (
+    
+      <AppContent />
+    
+  );
+}
+
+export default App;
