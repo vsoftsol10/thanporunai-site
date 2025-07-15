@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
-import Logo from '../../assets/thanporunai-logo.png';
+import Logo from '../../../assets/thanporunai-logo.png';
 
 const AdminLogin = () => {
   const [form, setForm] = useState({ email: '', password: '' });

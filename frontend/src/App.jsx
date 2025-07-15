@@ -8,8 +8,9 @@ import WhoWeAre from "./component/pages/WhoWeAre";
 import WhatWeDo from "./component/pages/WhatWeDo";
 import Contact from "./component/pages/Contact";
 import FloatingIcons from './component/animations/FloatingIcons';
-import AdminLogin from './component/pages/AdminLogin';
-import AdminPage from './component/pages/AdminPage';
+import AdminLogin from './component/pages/admin/AdminLogin';
+import AdminPage from './component/pages/admin/AdminPage';
+import NeedUs from './component/pages/NeedUsFrom';
 
 function AppContent() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppContent() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/adminlogin" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/needus" element={<NeedUs />} />
       </Routes>
 
       {!isAdminRoute && <Footer />}

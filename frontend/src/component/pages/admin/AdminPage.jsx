@@ -1,90 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Search, Filter, Download, Eye, Trash2, Clock, User, Mail, MessageCircle, Calendar, ChevronDown, MoreHorizontal, Settings, LogOut } from 'lucide-react';
-import Logo from '../../assets/thanporunai-logo.png';
+import Logo from '../../../assets/thanporunai-logo.png';
 
 const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [currentPage, setCurrentPage] = useState(1);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
+  // Fetch data from API
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
-  const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-    localStorage.removeItem('token');
-    navigate('/adminlogin');
-  }
-  // Sample data - replace with your actual data
-  const [reports, setReports] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      queries: 'Product pricing inquiry',
-      status: 'pending',
-      date: '2024-01-15',
-      type: 'Sales Report'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      queries: 'Technical support request',
-      status: 'completed',
-      date: '2024-01-14',
-      type: 'Inventory Report'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike.johnson@example.com',
-      queries: 'Account access issue',
-      status: 'pending',
-      date: '2024-01-13',
-      type: 'User Report'
-    },
-    {
-      id: 4,
-      name: 'Sarah Williams',
-      email: 'sarah.williams@example.com',
-      queries: 'Feature request for dashboard',
-      status: 'in-progress',
-      date: '2024-01-12',
-      type: 'Feature Request'
-    },
-    {
-      id: 5,
-      name: 'David Brown',
-      email: 'david.brown@example.com',
-      queries: 'Bug report - payment processing',
-      status: 'pending',
-      date: '2024-01-11',
-      type: 'Bug Report'
-    },
-    {
-      id: 6,
-      name: 'Lisa Davis',
-      email: 'lisa.davis@example.com',
-      queries: 'Integration documentation request',
-      status: 'completed',
-      date: '2024-01-10',
-      type: 'Documentation'
-    }
-  ]);
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this report?')) {
-      setReports(reports.filter(report => report.id !== id));
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/api/contacts');
+      // Transform API data to match your table structure
+      const transformedData = response.data.map((item, index) => ({
+        id: item.id || index + 1,
+        name: item.name,
+        email: item.email,
+        queries: item.message,
+        status: item.status || 'pending', // Default status if not provided by API
+        date: item.date || new Date().toISOString().split('T')[0], // Default to today if no date
+        type: item.type || 'General Query' // Default type if not provided
+      }));
+      setReports(transformedData);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError('Failed to fetch reports');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setReports(reports.map(report =>
-      report.id === id ? { ...report, status: newStatus } : report
-    ));
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      localStorage.removeItem('token');
+      navigate('/adminlogin');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      try {
+        // If your API has a delete endpoint, uncomment the line below
+        // await axios.delete(`http://localhost:5000/api/contacts/${id}`);
+        
+        // For now, just update the local state
+        setReports(reports.filter(report => report.id !== id));
+      } catch (err) {
+        console.error('Error deleting report:', err);
+        alert('Failed to delete report');
+      }
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      // If your API has an update endpoint, uncomment the lines below
+      // await axios.put(`http://localhost:5000/api/contacts/${id}`, { status: newStatus });
+      
+      // For now, just update the local state
+      setReports(reports.map(report =>
+        report.id === id ? { ...report, status: newStatus } : report
+      ));
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update status');
+    }
+  };
+
+  // Export to Excel functionality
+  const handleExport = () => {
+    const csvContent = [
+      ['Name', 'Email', 'Queries', 'Status', 'Date', 'Type'],
+      ...filteredReports.map(report => [
+        report.name,
+        report.email,
+        report.queries,
+        report.status,
+        report.date,
+        report.type
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reports_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const filteredReports = reports.filter(report => {
@@ -130,6 +149,33 @@ const AdminPage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchReports}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -173,7 +219,7 @@ const AdminPage = () => {
         {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Our Reports</h2>
-          <p className="text-gray-600">Manage and track all system reports and queries</p>
+          <p className="text-gray-600">Manage and review every report submission</p>
         </div>
 
         {/* Controls */}
@@ -186,7 +232,7 @@ const AdminPage = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search reports..."
+                  placeholder="Search by name, email, or message..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -224,9 +270,12 @@ const AdminPage = () => {
             </div>
 
             {/* Export Button */}
-            <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center space-x-2 font-medium">
+            <button 
+              onClick={handleExport}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center space-x-2 font-medium"
+            >
               <Download className="w-4 h-4" />
-              <span>Export</span>
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
@@ -253,7 +302,7 @@ const AdminPage = () => {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center space-x-2">
                       <MessageCircle className="w-4 h-4" />
-                      <span>Queries</span>
+                      <span>Message</span>
                     </div>
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -336,7 +385,7 @@ const AdminPage = () => {
                 <div className="mb-3">
                   <p className="text-sm text-gray-600 mb-1">
                     <MessageCircle className="w-4 h-4 inline mr-1" />
-                    Query:
+                    Message:
                   </p>
                   <p className="text-sm text-gray-900">{report.queries}</p>
                 </div>
@@ -368,68 +417,83 @@ const AdminPage = () => {
             ))}
           </div>
 
+          {/* Empty State */}
+          {paginatedReports.length === 0 && (
+            <div className="text-center py-12">
+              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions found</h3>
+              <p className="text-gray-500">
+                {searchTerm || filterStatus !== 'all' 
+                  ? 'Try adjusting your search or filters' 
+                  : 'Contact submissions will appear here'}
+              </p>
+            </div>
+          )}
+
           {/* Pagination */}
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                    <span className="font-medium">
-                      {Math.min(startIndex + itemsPerPage, sortedReports.length)}
-                    </span>{' '}
-                    of <span className="font-medium">{sortedReports.length}</span> results
-                  </p>
+          {paginatedReports.length > 0 && (
+            <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    {[...Array(totalPages)].map((_, i) => (
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                      <span className="font-medium">
+                        {Math.min(startIndex + itemsPerPage, sortedReports.length)}
+                      </span>{' '}
+                      of <span className="font-medium">{sortedReports.length}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                       <button
-                        key={i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                       >
-                        {i + 1}
+                        Previous
                       </button>
-                    ))}
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </nav>
+                      {[...Array(totalPages)].map((_, i) => (
+                        <button
+                          key={i + 1}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

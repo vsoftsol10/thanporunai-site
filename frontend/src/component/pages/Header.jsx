@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Header.css';
 import Logo from '../../assets/thanporunai-logo.png';
 
@@ -13,23 +14,28 @@ const Header = () => {
       <div className="header-container">
         {/* Top Row - Logo and Support Button */}
         <div className="top-row">
-          <div className="logo">
-            <div className="logo-icon">
-              <img src={Logo} alt="thanporunai-logo" className="logo-img" style={{ width: '180px', height: '180px'}} />
-            </div>
+          <div className="logo-icon">
+            <a href="/">
+              <img
+                src={Logo}
+                alt="thanporunai-logo"
+                className="logo-img"
+                style={{ width: '180px', height: '180px', cursor: 'pointer' }}
+              />
+            </a>
           </div>
 
           <button className="support-btn">
             <span>Need Us</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" fill="none" />
             </svg>
           </button>
 
           {/* Mobile Hamburger */}
-          <button 
-            className={`hamburger ${menuOpen ? 'active' : ''}`} 
-            onClick={toggleMenu} 
+          <button
+            className={`hamburger ${menuOpen ? 'active' : ''}`}
+            onClick={toggleMenu}
             aria-label="Toggle menu"
           >
             <span></span>
@@ -40,13 +46,13 @@ const Header = () => {
 
         {/* Bottom Row - Navigation Menu */}
         <nav className={`nav ${menuOpen ? 'open' : ''}`}>
-          <a href="#about" onClick={closeMenu}>About Us</a>
-          <a href="#team" onClick={closeMenu}>Our Team</a>
-          <a href="#campaigns" onClick={closeMenu}>Our Campaigns</a>
-          <a href="#projects" onClick={closeMenu}>Our Projects</a>
-          <a href="#partners" onClick={closeMenu}>Our Partners</a>
-          <a href="#contact" onClick={closeMenu}>Contact Us</a>
-          
+          <Link to="/about" onClick={closeMenu}>About Us</Link>
+          <Link to="/team" onClick={closeMenu}>Our Team</Link>
+          <Link to="/campaigns" onClick={closeMenu}>Our Campaigns</Link>
+          <Link to="/projects" onClick={closeMenu}>Our Projects</Link>
+          <Link to="/partners" onClick={closeMenu}>Our Partners</Link>
+          <Link to="/contact" onClick={closeMenu}>Contact Us</Link>
+
           {/* Mobile Need Us Button */}
           <div className="mobile-support-btn">
             <button className="support-btn mobile-only">
