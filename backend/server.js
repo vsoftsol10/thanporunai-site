@@ -3,25 +3,25 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-// Load env vars
+// Load environment variables
 dotenv.config();
 
-// Connect to DB
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 
-// Middleware
+// Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // To parse JSON data
 
-// ✅ Import routes *AFTER* initializing app and middleware
+// Import Routes (after initializing app)
 const contactRoutes = require('./routes/contactRoutes');
-const authRoutes = require('./routes/authRoutes'); // <== FIXED ORDER
+const authRoutes = require('./routes/authRoutes');
 
-// Use routes
+// Use Routes
 app.use('/api/contacts', contactRoutes);
-app.use('/api/auth', authRoutes); // <== use after importing
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 

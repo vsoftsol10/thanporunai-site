@@ -25,12 +25,12 @@ const Header = () => {
             </a>
           </div>
 
-          <button className="support-btn">
+          <Link to="/needus" className="support-btn" onClick={closeMenu}>
             <span>Need Us</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" fill="none" />
             </svg>
-          </button>
+          </Link>
 
           {/* Mobile Hamburger */}
           <button
@@ -55,12 +55,12 @@ const Header = () => {
 
           {/* Mobile Need Us Button */}
           <div className="mobile-support-btn">
-            <button className="support-btn mobile-only">
+            <Link to="/needus" className="support-btn mobile-only" onClick={closeMenu}>
               <span>Need Us</span>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" fill="none" />
               </svg>
-            </button>
+            </Link>
           </div>
         </nav>
       </div>

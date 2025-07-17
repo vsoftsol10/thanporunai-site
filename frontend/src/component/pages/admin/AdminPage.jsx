@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Search, Filter, Download, Eye, Trash2, Clock, User, Mail, MessageCircle, Calendar, ChevronDown, MoreHorizontal, Settings, LogOut } from 'lucide-react';
-import Logo from '../../../assets/thanporunai-logo.png';
+import { Search, Filter, Download, Eye, Trash2, Clock, User, Phone, MessageCircle, Calendar, ChevronDown, MoreHorizontal, Settings, LogOut } from 'lucide-react';
 
 const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,21 +21,33 @@ const AdminPage = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/contacts');
-      // Transform API data to match your table structure
-      const transformedData = response.data.map((item, index) => ({
-        id: item.id || index + 1,
-        name: item.name,
-        email: item.email,
-        queries: item.message,
-        status: item.status || 'pending', // Default status if not provided by API
-        date: item.date || new Date().toISOString().split('T')[0], // Default to today if no date
-        type: item.type || 'General Query' // Default type if not provided
-      }));
-      setReports(transformedData);
+      setError(''); // Clear previous errors
+      
+      // Using fetch instead of axios for compatibility
+      const response = await fetch('http://localhost:5000/api/contacts');
+      const data = await response.json();
+      
+      // Check if response has the expected structure
+      if (data && data.success && Array.isArray(data.data)) {
+        // Transform API data to match your table structure
+        const transformedData = data.data.map((item, index) => ({
+          id: item._id || `temp-${index + 1}`,
+          name: item.name || 'Unknown',
+          number: item.number || item.phone || 'No number',
+          queries: item.message || 'No message',
+          status: item.status || 'pending',
+          date: item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          type: item.type || 'General Query'
+        }));
+        
+        setReports(transformedData);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
       console.error('Error fetching reports:', err);
-      setError('Failed to fetch reports');
+      setError(`Failed to fetch reports: ${err.message}`);
+      setReports([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -54,41 +64,73 @@ const AdminPage = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this report?')) {
       try {
-        // If your API has a delete endpoint, uncomment the line below
-        // await axios.delete(`http://localhost:5000/api/contacts/${id}`);
+        // Call the delete API endpoint
+        const response = await fetch(`http://localhost:5000/api/contacts/${id}`, {
+          method: 'DELETE',
+        });
         
-        // For now, just update the local state
+        if (!response.ok) {
+          throw new Error('Failed to delete');
+        }
+        
+        // Update the local state after successful deletion
         setReports(reports.filter(report => report.id !== id));
+        
+        // Show success message
+        alert('Report deleted successfully');
       } catch (err) {
         console.error('Error deleting report:', err);
-        alert('Failed to delete report');
+        alert(`Failed to delete report: ${err.message}`);
       }
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      // If your API has an update endpoint, uncomment the lines below
-      // await axios.put(`http://localhost:5000/api/contacts/${id}`, { status: newStatus });
+      // If your API has an update endpoint, implement it here
+      // For now, we'll just update the local state
+      // await fetch(`http://localhost:5000/api/contacts/${id}`, {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ status: newStatus })
+      // });
       
-      // For now, just update the local state
+      // Update the local state
       setReports(reports.map(report =>
         report.id === id ? { ...report, status: newStatus } : report
       ));
+      
+      console.log(`Status updated for report ${id}: ${newStatus}`);
     } catch (err) {
       console.error('Error updating status:', err);
-      alert('Failed to update status');
+      alert(`Failed to update status: ${err.message}`);
     }
   };
 
-  // Export to Excel functionality
+  // Filter reports based on search and filter criteria
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = (report.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (report.number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (report.queries || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter = filterStatus === 'all' || report.status === filterStatus;
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // Export to CSV functionality
   const handleExport = () => {
+    if (filteredReports.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
     const csvContent = [
-      ['Name', 'Email', 'Queries', 'Status', 'Date', 'Type'],
+      ['Name', 'Number', 'Queries', 'Status', 'Date', 'Type'],
       ...filteredReports.map(report => [
         report.name,
-        report.email,
-        report.queries,
+        report.number,
+        `"${report.queries.replace(/"/g, '""')}"`, // Escape quotes in CSV
         report.status,
         report.date,
         report.type
@@ -104,25 +146,16 @@ const AdminPage = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up
   };
-
-  const filteredReports = reports.filter(report => {
-    const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.queries.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter = filterStatus === 'all' || report.status === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
 
   const sortedReports = [...filteredReports].sort((a, b) => {
     if (sortBy === 'date') {
       return new Date(b.date) - new Date(a.date);
     } else if (sortBy === 'name') {
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     } else if (sortBy === 'status') {
-      return a.status.localeCompare(b.status);
+      return (a.status || '').localeCompare(b.status || '');
     }
     return 0;
   });
@@ -130,6 +163,11 @@ const AdminPage = () => {
   const totalPages = Math.ceil(sortedReports.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedReports = sortedReports.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, sortBy]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -186,11 +224,9 @@ const AdminPage = () => {
             {/* Logo and Title */}
             <div className="flex items-center justify-between w-full sm:w-auto">
               <div className="flex items-center gap-3">
-                <img
-                  src={Logo}
-                  alt="Logo"
-                  className="w-16 h-16 object-contain"
-                />
+                <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">TA</span>
+                </div>
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Admin Dashboard
                 </h1>
@@ -232,7 +268,7 @@ const AdminPage = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, or message..."
+                  placeholder="Search by name, number, or message..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -295,8 +331,8 @@ const AdminPage = () => {
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4" />
-                      <span>Email</span>
+                      <Phone className="w-4 h-4" />
+                      <span>Number</span>
                     </div>
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -327,10 +363,12 @@ const AdminPage = () => {
                       <div className="text-sm text-gray-500">{report.type}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{report.email}</div>
+                      <div className="text-sm text-gray-900">{report.number}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">{report.queries}</div>
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={report.queries}>
+                        {report.queries}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{new Date(report.date).toLocaleDateString()}</div>
@@ -355,6 +393,7 @@ const AdminPage = () => {
                         <button
                           onClick={() => handleDelete(report.id)}
                           className="text-red-500 hover:text-red-700 p-1 rounded"
+                          title="Delete report"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -373,7 +412,7 @@ const AdminPage = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{report.name}</h3>
-                    <p className="text-sm text-gray-500">{report.email}</p>
+                    <p className="text-sm text-gray-500">{report.number}</p>
                     <p className="text-xs text-gray-400">{report.type}</p>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
@@ -408,6 +447,7 @@ const AdminPage = () => {
                     <button
                       onClick={() => handleDelete(report.id)}
                       className="text-red-500 hover:text-red-700 p-1 rounded"
+                      title="Delete report"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -431,21 +471,21 @@ const AdminPage = () => {
           )}
 
           {/* Pagination */}
-          {paginatedReports.length > 0 && (
+          {totalPages > 1 && (
             <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
@@ -465,26 +505,30 @@ const AdminPage = () => {
                       <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Previous
                       </button>
-                      {[...Array(totalPages)].map((_, i) => (
-                        <button
-                          key={i + 1}
-                          onClick={() => setCurrentPage(i + 1)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      {[...Array(Math.min(totalPages, 10))].map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNum
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                             }`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Next
                       </button>

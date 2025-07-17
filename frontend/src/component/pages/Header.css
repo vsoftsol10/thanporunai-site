@@ -215,8 +215,8 @@
   }
 
   .nav {
-    position: fixed;
-    top: 70px;
+    position: absolute;
+    top: 185px;
     left: 0;
     right: 0;
     flex-direction: column;
