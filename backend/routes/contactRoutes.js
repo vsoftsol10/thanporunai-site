@@ -2,17 +2,24 @@ const express = require('express');
 const router = express.Router();
 const Contact = require('../models/Contact');
 
-// POST - Save Contact
+// Create Contact
 router.post('/', async (req, res) => {
   try {
-    const saved = await Contact.create(req.body);
+    const { name, number, message } = req.body;
+
+    if (!name || !number || !message) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    const saved = await Contact.create({ name, number, message });
+
     res.status(201).json({ success: true, data: saved });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// GET - Fetch Contacts
+// Get All Contacts
 router.get('/', async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
@@ -22,10 +29,15 @@ router.get('/', async (req, res) => {
   }
 });
 
-// DELETE - Delete by ID
+// Delete Contact by ID
 router.delete('/:id', async (req, res) => {
   try {
-    await Contact.findByIdAndDelete(req.params.id);
+    const deleted = await Contact.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Contact not found" });
+    }
+
     res.json({ success: true, message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

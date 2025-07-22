@@ -6,25 +6,29 @@ const connectDB = require('./config/db');
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
+// Connect to MongoDB Atlas
 connectDB();
 
 const app = express();
 
-// Middlewares
+// Global Middlewares
 app.use(cors());
-app.use(express.json()); // To parse JSON data
+app.use(express.json()); // Parse incoming JSON
 
-// Import Routes (after initializing app)
+// Routes
 const contactRoutes = require('./routes/contactRoutes');
 const authRoutes = require('./routes/authRoutes');
 
-// Use Routes
 app.use('/api/contacts', contactRoutes);
 app.use('/api/auth', authRoutes);
+
+// Root Route (Optional Health Check)
+app.get('/', (req, res) => {
+  res.send('🚀 API is running and connected to MongoDB Atlas');
+});
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
