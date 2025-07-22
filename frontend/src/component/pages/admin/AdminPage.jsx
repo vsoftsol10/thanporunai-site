@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Download, Eye, Trash2, Clock, User, Phone, MessageCircle, Calendar, ChevronDown, MoreHorizontal, Settings, LogOut } from 'lucide-react';
+import LogoImg from '../../../assets/thanporunai-logo.png';
 
 const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -224,8 +225,8 @@ const AdminPage = () => {
             {/* Logo and Title */}
             <div className="flex items-center justify-between w-full sm:w-auto">
               <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">TA</span>
+                <div className="w-35 h-35 flex items-center justify-center">
+                  <img src={LogoImg} alt="Logo" className="w-35 h-35" />
                 </div>
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Admin Dashboard
