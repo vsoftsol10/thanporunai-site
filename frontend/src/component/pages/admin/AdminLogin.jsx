@@ -20,7 +20,7 @@ const AdminLogin = () => {
     try {
       // Note: localStorage is not available in this environment
       // In a real app, you would handle token storage here
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('https://thanporunai-site.onrender.com/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 /* Header.css */
 .main-header {
-  background: #157A1E;
+  background: #1b5e20; /*157A1E */
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   padding: 15px 40px;
   /* position: sticky; */
@@ -88,7 +88,7 @@
 }
 
 .support-btn:hover {
-  background: #0a4061;
+  background: #0f73b1;
   transform: translateY(-1px);
 } 
 

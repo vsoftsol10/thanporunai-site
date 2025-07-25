@@ -20,7 +20,7 @@ const Header = () => {
                 src={Logo}
                 alt="thanporunai-logo"
                 className="logo-img"
-                style={{ width: '180px', height: '180px', cursor: 'pointer' }}
+                style={{ width: '190px', height: '190px', cursor: 'pointer' }}
               />
             </a>
           </div>
